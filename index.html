@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caixa da Cafeteria</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Caixa da Cafeteria</h1>
+  <script>
+    let produtos = [
+      { nome: "Café Expresso", preco: 1.0 },
+      { nome: "Pão de Queijo", preco: 2.0 },
+      { nome: "Donut Glacê", preco: 2.5 },
+      { nome: "Croissant de Chocolate", preco: 3.0 },
+      { nome: "Suco Natural", preco: 2.0 },
+      { nome: "Bolo de Cenoura", preco: 3.5 },
+      { nome: "Sanduíche de Frango", preco: 3.5 },
+      { nome: "Muffin de Blueberry", preco: 3.0 },
+      { nome: "Smoothie de Morango", preco: 2.5 },
+      { nome: "Torta de Maçã", preco: 3.0 }
+    ];
+
+    let pedidoAtual = [];
+    let totalPedido = 0;
+    let dinheiroRecebido = 50; // Valor fixo recebido pelo cliente
+    let trocoCorreto = 0;
+    let tempoRestante = 0; // Tempo inicial será calculado dinamicamente
+    let nivel = 1; // Nível do jogo
+    let trocoCalculado = 0; // Troco acumulado com os cliques nos botões
+    let jogoAtivo = true;
+
+    function setup() {
+      createCanvas(800, 600);
+      textAlign(LEFT, TOP);
+      textSize(16);
+      gerarPedidoAleatorio();
+    }
+
+    function draw() {
+      if (!jogoAtivo) return;
+
+      background(255);
+
+      // Título
+      fill(0);
+      text("CAIXA DA CAFETERIA", 20, 20);
+
+      // Caderno de Preços
+      text("CADERNETA DE PREÇOS:", 20, 60);
+      for (let i = 0; i < produtos.length; i++) {
+        text(`${produtos[i].nome}: R$${formatarValor(produtos[i].preco)}`, 20, 90 + i * 20);
+      }
+
+      // Pedido Atual
+      text("PEDIDO ATUAL:", 400, 60);
+      if (pedidoAtual.length === 0) {
+        text("Gerando novo pedido...", 400, 80);
+      } else {
+        for (let i = 0; i < pedidoAtual.length; i++) {
+          text(`${pedidoAtual[i].quantidade} x ${pedidoAtual[i].nome}`, 400, 80 + i * 20);
+        }
+        text(`TOTAL: R$${formatarValor(totalPedido)}`, 400, 80 + pedidoAtual.length * 20);
+      }
+
+      // Dinheiro Recebido e Troco
+      text(`DINHEIRO RECEBIDO: R$${formatarValor(dinheiroRecebido)}`, 20, 300);
+      text(`TROCO CALCULADO: R$${formatarValor(trocoCalculado)}`, 20, 360);
+
+      // Botões de Troco (Verdes)
+      let valoresTroco = [0.05, 0.25, 0.50, 1.00, 2.00, 5.00, 10.00, 20.00, 50.00, 100.00];
+      let xBotao = 20;
+      let yBotao = 400;
+      let larguraBotao = 80;
+      let alturaBotao = 30;
+      let espacamento = 10;
+
+      for (let i = 0; i < valoresTroco.length; i++) {
+        let posX = xBotao + i * (larguraBotao + espacamento);
+        fill(0, 255, 0);
+        rect(posX, yBotao, larguraBotao, alturaBotao);
+        fill(0);
+        text(`+R$${formatarValor(valoresTroco[i])}`, posX + 10, yBotao + 10);
+      }
+
+      // Botões de Remover Troco (Vermelhos)
+      let valoresRemover = [0.05, 0.25, 1.00, 5.00];
+      let xBotaoRemover = 20;
+      let yBotaoRemover = 450;
+
+      for (let i = 0; i < valoresRemover.length; i++) {
+        let posX = xBotaoRemover + i * (larguraBotao + espacamento);
+        fill(255, 0, 0);
+        rect(posX, yBotaoRemover, larguraBotao, alturaBotao);
+        fill(0);
+        text(`-R$${formatarValor(valoresRemover[i])}`, posX + 10, yBotaoRemover + 10);
+      }
+
+      // Botão Finalizar
+      fill(0, 255, 0);
+      rect(20, 500, 150, 40);
+      fill(0);
+      text("Finalizar", 40, 510);
+
+      // Temporizador
+      text(`TEMPO RESTANTE: ${tempoRestante.toFixed(1)}s`, 20, 560);
+
+      // Atualiza o temporizador
+      if (frameCount % 60 === 0) {
+        tempoRestante -= 1;
+        if (tempoRestante <= 0) {
+          jogoAtivo = false;
+          alert("Tempo esgotado! Fim de jogo.");
+          reiniciarJogo();
+        }
+      }
+    }
+
+    function mouseClicked() {
+      // Verifica se algum botão de troco foi clicado
+      let valoresTroco = [0.05, 0.25, 0.50, 1.00, 2.00, 5.00, 10.00, 20.00, 50.00, 100.00];
+      let xBotao = 20;
+      let yBotao = 400;
+      let larguraBotao = 80;
+      let alturaBotao = 30;
+      let espacamento = 10;
+
+      for (let i = 0; i < valoresTroco.length; i++) {
+        let posX = xBotao + i * (larguraBotao + espacamento);
+        if (mouseX > posX && mouseX < posX + larguraBotao && mouseY > yBotao && mouseY < yBotao + alturaBotao) {
+          trocoCalculado += valoresTroco[i];
+          break;
+        }
+      }
+
+      // Verifica se algum botão de remover troco foi clicado
+      let valoresRemover = [0.05, 0.25, 1.00, 5.00];
+      let xBotaoRemover = 20;
+      let yBotaoRemover = 450;
+
+      for (let i = 0; i < valoresRemover.length; i++) {
+        let posX = xBotaoRemover + i * (larguraBotao + espacamento);
+        if (mouseX > posX && mouseX < posX + larguraBotao && mouseY > yBotaoRemover && mouseY < yBotaoRemover + alturaBotao) {
+          trocoCalculado = Math.max(0, trocoCalculado - valoresRemover[i]); // Garante que o troco não fique negativo
+          break;
+        }
+      }
+
+      // Verifica se o botão "Finalizar" foi clicado
+      if (mouseX > 20 && mouseX < 170 && mouseY > 500 && mouseY < 540) {
+        if (trocoCalculado === trocoCorreto) {
+          alert("Parabéns! Troco calculado corretamente.");
+          proximoNivel();
+        } else {
+          alert("Troco incorreto! Tente novamente.");
+        }
+      }
+    }
+
+    function gerarPedidoAleatorio() {
+      pedidoAtual = [];
+      totalPedido = 0;
+      let numItens = floor(random(1, nivel + 2)); // Entre 1 e (nível + 1) itens
+      for (let i = 0; i < numItens; i++) {
+        let produto = random(produtos);
+        let quantidade = floor(random(1, 4)); // Entre 1 e 3 unidades
+        pedidoAtual.push({ nome: produto.nome, quantidade: quantidade });
+        totalPedido += quantidade * produto.preco;
+      }
+
+      // Calcula o troco correto
+      trocoCorreto = dinheiroRecebido - totalPedido;
+
+      // Define o tempo com base no número de itens (+10 segundos por item)
+      tempoRestante = numItens * 10;
+
+      // Limpa o troco calculado
+      trocoCalculado = 0;
+    }
+
+    function proximoNivel() {
+      nivel++;
+      gerarPedidoAleatorio();
+    }
+
+    function reiniciarJogo() {
+      nivel = 1;
+      dinheiroRecebido = 50;
+      trocoCalculado = 0;
+      jogoAtivo = true;
+      gerarPedidoAleatorio();
+    }
+
+    // Função para formatar valores com vírgula
+    function formatarValor(valor) {
+      return valor.toFixed(2).replace(".", ",");
+    }
+  </script>
+</body>
+</html>
